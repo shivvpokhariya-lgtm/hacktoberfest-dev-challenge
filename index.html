@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WrenchWise — Is your mechanic ripping you off?</title>
+<meta name="description" content="Paste any car repair estimate. WrenchWise checks every line against fair-price data and explains it in plain English — 100% on your device with Google's open-weight Gemma 2B.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090d; --panel:#0e1016; --panel2:#12141c; --line:#1d2130;
+  --text:#eef0f6; --muted:#9aa3b2; --dim:#6b7280;
+  --amber:#f5a524; --amber-d:#b97a12;
+  --green:#34d399; --red:#f87171; --blue:#60a5fa;
+  --radius:16px;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:radial-gradient(900px 480px at 50% -120px, rgba(245,165,36,.10), transparent 60%),
+             radial-gradient(700px 500px at 85% 110%, rgba(96,165,250,.06), transparent 60%);}
+.wrap{max-width:900px; margin:0 auto; padding:0 22px; position:relative; z-index:1}
+header{display:flex; align-items:center; justify-content:space-between; padding:26px 0}
+.brand{display:flex; align-items:center; gap:11px; font-family:'Space Grotesk'; font-weight:700; font-size:20px; letter-spacing:-.02em}
+.brand svg{width:30px; height:30px}
+.ondevice{font-size:12px; font-weight:600; color:var(--green); border:1px solid rgba(52,211,153,.35); background:rgba(52,211,153,.08); padding:7px 13px; border-radius:999px; display:flex; align-items:center; gap:7px}
+.ondevice .dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green)}
+.hero{padding:56px 0 40px; text-align:left}
+.hero h1{font-family:'Space Grotesk'; font-size:clamp(38px,6vw,62px); font-weight:700; letter-spacing:-.03em; line-height:1.05}
+.hero h1 .hl{background:linear-gradient(100deg,var(--amber),#ffd58a); -webkit-background-clip:text; background-clip:text; color:transparent}
+.hero p{color:var(--muted); font-size:17px; max-width:620px; margin:18px 0 26px}
+.chips{display:flex; gap:10px; flex-wrap:wrap}
+.chip{font-size:13px; color:var(--muted); border:1px solid var(--line); background:var(--panel); padding:8px 14px; border-radius:999px}
+.chip b{color:var(--text); font-weight:600}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:26px; margin:18px 0}
+.card h2{font-family:'Space Grotesk'; font-size:20px; margin-bottom:6px; letter-spacing:-.01em}
+.card .sub{color:var(--muted); font-size:14px; margin-bottom:18px}
+.seg{display:inline-flex; background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:4px; gap:4px; margin-bottom:16px}
+.seg button{border:0; background:transparent; color:var(--muted); font:600 13px 'Inter'; padding:8px 18px; border-radius:999px; cursor:pointer; transition:.2s}
+.seg button.on{background:var(--amber); color:#1a1206}
+textarea{width:100%; min-height:190px; background:var(--panel2); border:1px solid var(--line); border-radius:12px; color:var(--text); font:14px/1.65 'Inter'; padding:16px; resize:vertical; outline:none; transition:border .2s}
+textarea:focus{border-color:var(--amber-d)}
+.btnrow{display:flex; gap:12px; margin-top:16px; flex-wrap:wrap}
+.btn{font:600 15px 'Space Grotesk'; padding:14px 28px; border-radius:12px; border:0; cursor:pointer; transition:transform .12s, box-shadow .2s}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(180deg,#ffc95e,var(--amber)); color:#1a1206; box-shadow:0 8px 30px rgba(245,165,36,.25)}
+.btn.primary:hover{box-shadow:0 8px 38px rgba(245,165,36,.4)}
+.btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--line)}
+.btn.ghost:hover{color:var(--text); border-color:var(--dim)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+#results{display:none}
+.verdict{border-radius:var(--radius); padding:26px; margin:18px 0; border:1px solid; display:flex; gap:18px; align-items:flex-start}
+.verdict .mark{font-family:'Space Grotesk'; font-weight:700; font-size:15px; padding:8px 16px; border-radius:999px; white-space:nowrap; margin-top:2px}
+.verdict h3{font-family:'Space Grotesk'; font-size:22px; letter-spacing:-.01em; margin-bottom:6px}
+.verdict p{color:var(--muted); font-size:14px}
+.verdict.overpriced{background:rgba(248,113,113,.07); border-color:rgba(248,113,113,.4)}
+.verdict.overpriced .mark{background:var(--red); color:#2a0a0a}
+.verdict.mixed{background:rgba(245,165,36,.07); border-color:rgba(245,165,36,.4)}
+.verdict.mixed .mark{background:var(--amber); color:#1a1206}
+.verdict.fair{background:rgba(52,211,153,.07); border-color:rgba(52,211,153,.4)}
+.verdict.fair .mark{background:var(--green); color:#06281c}
+.totals{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:18px 0}
+.total{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+.total .k{font-size:12px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px}
+.total .v{font-family:'Space Grotesk'; font-size:24px; font-weight:700}
+.total .v.red{color:var(--red)} .total .v.green{color:var(--green)} .total .v.amber{color:var(--amber)}
+.items{display:grid; gap:12px; margin:18px 0}
+.item{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:18px 20px}
+.item .top{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px}
+.item .name{font-weight:600; font-size:15px}
+.item .price{font-family:'Space Grotesk'; font-weight:700; font-size:20px; white-space:nowrap}
+.pill{font-size:11px; font-weight:700; letter-spacing:.06em; padding:5px 12px; border-radius:999px; text-transform:uppercase}
+.pill.fair{background:rgba(52,211,153,.14); color:var(--green); border:1px solid rgba(52,211,153,.35)}
+.pill.high{background:rgba(248,113,113,.14); color:var(--red); border:1px solid rgba(248,113,113,.35)}
+.pill.check{background:rgba(245,165,36,.14); color:var(--amber); border:1px solid rgba(245,165,36,.35)}
+.pill.low{background:rgba(96,165,250,.14); color:var(--blue); border:1px solid rgba(96,165,250,.35)}
+.pill.unknown{background:rgba(154,163,178,.12); color:var(--muted); border:1px solid var(--line)}
+.item .fair{font-size:13px; color:var(--dim); margin:6px 0}
+.item .note{font-size:13.5px; color:var(--muted); border-left:2px solid var(--line); padding-left:12px; margin-top:8px}
+.item .note.ai{border-color:var(--amber-d); color:var(--text)}
+.aicard{border:1px dashed rgba(245,165,36,.45); background:rgba(245,165,36,.04)}
+.prog{height:8px; background:var(--panel2); border-radius:99px; overflow:hidden; margin:14px 0 6px}
+.prog i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--amber-d),var(--amber)); border-radius:99px; transition:width .3s}
+.aiout{font-size:14.5px; color:var(--text); white-space:pre-wrap; margin-top:14px}
+.aiout strong{color:var(--amber)}
+.why{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:26px 0}
+.why .w{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px}
+.why .w h4{font-family:'Space Grotesk'; font-size:15px; margin-bottom:6px}
+.why .w p{font-size:13px; color:var(--muted)}
+.disclaimer{font-size:12.5px; color:var(--dim); border-top:1px solid var(--line); padding-top:18px; margin:26px 0}
+footer{padding:34px 0 60px; color:var(--dim); font-size:13px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap}
+footer a{color:var(--muted); text-decoration:none} footer a:hover{color:var(--amber)}
+@media(max-width:640px){.totals,.why{grid-template-columns:1fr}.hero{padding:36px 0 28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#f5a524" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    WrenchWise
+  </div>
+  <div class="ondevice"><span class="dot"></span>Gemma 2B &middot; 100% on-device</div>
+</header>
+
+<section class="hero">
+  <h1>Is your mechanic <span class="hl">ripping you off?</span></h1>
+  <p>Paste any repair estimate. WrenchWise checks every line against fair-price data, flags the inflated ones, and explains it all in plain English — with AI that runs entirely on your device. Your car's data never leaves your laptop.</p>
+  <div class="chips">
+    <div class="chip"><b>Private by design</b> — zero uploads</div>
+    <div class="chip"><b>$0 per quote</b> — no API bills</div>
+    <div class="chip"><b>India + US</b> price packs</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Paste your estimate</h2>
+  <div class="sub">Copy-paste from the garage's WhatsApp message, bill photo transcription, or invoice. One item per line, with the price.</div>
+  <div class="seg" id="regionSeg">
+    <button class="on" data-region="IN">&#8377; India</button>
+    <button data-region="US">$ United States <span style="opacity:.6;font-size:11px">beta</span></button>
+  </div>
+  <textarea id="estimateInput" placeholder="Example:&#10;Engine oil 5W30 synthetic - Rs 3,200&#10;Brake pads front - Rs 6,800&#10;AC gas refill - Rs 4,200&#10;Labour charges - Rs 3,500"></textarea>
+  <div class="btnrow">
+    <button class="btn primary" id="analyzeBtn">Analyze my estimate</button>
+    <button class="btn ghost" id="sampleBtn">Use a sample estimate</button>
+  </div>
+</section>
+
+<section id="results">
+  <div class="verdict" id="verdictBanner"></div>
+  <div class="totals" id="totalsRow"></div>
+  <div class="card">
+    <h2>Line-by-line check</h2>
+    <div class="sub">Fair ranges come from our curated price packs. Anything above range gets flagged — no opinions, just data.</div>
+    <div class="items" id="itemsList"></div>
+  </div>
+  <div class="card aicard" id="aiCard">
+    <h2>Plain-English explanation <span style="font-size:12px;color:var(--dim);font-family:Inter;font-weight:400">— by Gemma 2B, on your device</span></h2>
+    <div class="sub" id="aiSub">One click loads Google's open-weight Gemma 2B into your browser (~1.5 GB, one-time, cached after). Nothing you pasted is ever sent anywhere.</div>
+    <div class="btnrow" id="aiBtnRow">
+      <button class="btn primary" id="loadModelBtn">Explain with on-device AI</button>
+    </div>
+    <div class="prog" id="aiProgWrap" style="display:none"><i id="aiProg"></i></div>
+    <div class="aiout" id="aiOut"></div>
+  </div>
+</section>
+
+<section class="why">
+  <div class="w"><h4>🔒 Private, for real</h4><p>Estimates carry your number plate, VIN and service history. Cloud AI would ship all of it to someone's server. Here, the model runs in your browser — the privacy boundary <i>is</i> the product.</p></div>
+  <div class="w"><h4>💸 $0 marginal cost</h4><p>Charging $2 a quote only works when each quote costs you nothing. No per-token API bill means the unit economics of this side hustle actually survive contact with reality.</p></div>
+  <div class="w"><h4>🎯 Niche beats generic</h4><p>A general chatbot guesses at part prices. WrenchWise pairs a curated fair-price database (the deterministic part) with the open model (the explainer) — each doing what it's actually good at.</p></div>
+</section>
+
+<div class="disclaimer">Fair ranges are estimates compiled from market data, not quotes — always confirm with a second garage before disputing a bill. WrenchWise is an information tool, not a mechanic. US price pack is in beta: crowdsourced ranges, verify locally.</div>
+
+<footer>
+  <span>Built for the Hacktoberfest 2026 Open-Source AI Challenge · Week 2: Side Hustle</span>
+  <span>Open weights: <a href="https://huggingface.co/google/gemma-2-2b-it" target="_blank" rel="noopener">google/gemma-2-2b-it</a> · Inference: <a href="https://github.com/mlc-ai/web-llm" target="_blank" rel="noopener">WebLLM</a></span>
+</footer>
+
+</div>
+
+<script id="wrenchwise-core">
+/* ============================================================
+   WrenchWise deterministic core — pure JS, no DOM.
+   Honesty architecture: ALL numbers are computed here by code.
+   The open-weight model only puts these figures into words.
+   ============================================================ */
+
+const PRICE_PACKS = {
+  IN: {
+    currency: "₹",
+    label: "India",
+    items: [
+      { name: "Engine oil change (synthetic)", aliases: ["engine oil", "oil change", "synthetic oil", "5w30", "5w-30", "10w30"], min: 1500, max: 3500, note: "Fully synthetic oil + labour. A mineral-oil job should stay under ₹1,500 — if you were charged synthetic prices, ask which oil was used." },
+      { name: "Oil filter", aliases: ["oil filter"], min: 250, max: 600, note: "Always replaced with the oil. Rarely costs more than ₹600." },
+      { name: "Air filter", aliases: ["air filter", "engine air filter"], min: 350, max: 900, note: "A simple part. If it's just dusty, many garages clean it instead of replacing." },
+      { name: "Cabin / AC filter", aliases: ["cabin filter", "cabin air filter", "ac filter", "pollen filter"], min: 450, max: 1000, note: "Affects AC airflow and smell, not engine health. Easy DIY replacement." },
+      { name: "Brake pads (front pair)", aliases: ["brake pad", "brake pads", "front brake"], min: 1500, max: 4000, note: "Wear item — replacement every 30–50k km is normal. Ask to see the old pads' thickness." },
+      { name: "Brake discs / rotors (pair)", aliases: ["brake disc", "brake rotor", "disc rotor", "disc skimming"], min: 3000, max: 7000, note: "Range is for replacement. Skimming/resurfacing should cost far less — confirm which one was actually done." },
+      { name: "Brake fluid flush", aliases: ["brake fluid", "brake oil"], min: 600, max: 1500, note: "Needed roughly every 2 years. Quick job — high quotes here are pure margin." },
+      { name: "Battery (12V)", aliases: ["battery", "car battery", "12v battery", "amaron", "exide"], min: 5500, max: 10000, note: "Check the manufacturing date on the battery — old stock at full price is a classic trick." },
+      { name: "AC gas refill", aliases: ["ac gas", "ac refill", "refrigerant", "ac cooling", "ac service"], min: 1500, max: 3500, note: "If gas leaked out, there's a leak — a refill without a leak check means you'll be back next month." },
+      { name: "Coolant flush", aliases: ["coolant", "radiator flush"], min: 800, max: 1800, note: "Straightforward job. Watch for 'premium coolant' upsells at 3x price." },
+      { name: "Spark plugs (set of 4)", aliases: ["spark plug"], min: 800, max: 2500, note: "Iridium plugs cost more but last ~100k km. Regular plugs shouldn't cross ₹1,200." },
+      { name: "Timing belt kit", aliases: ["timing belt", "timing chain"], min: 5000, max: 12000, note: "Labour-intensive (engine opened up). Get the old belt back as proof." },
+      { name: "Clutch kit", aliases: ["clutch", "clutch plate", "clutch kit", "pressure plate"], min: 7000, max: 16000, note: "Big labour job — gearbox comes out. Quotes vary a lot by car model; hatchbacks sit at the low end." },
+      { name: "Wiper blades (pair)", aliases: ["wiper", "wiper blade"], min: 400, max: 1200, note: "Two-minute DIY job. One of the most commonly overpriced line items." },
+      { name: "Wheel alignment + balancing", aliases: ["wheel alignment", "alignment", "wheel balancing", "balancing"], min: 800, max: 1800, note: "Needed after tyre changes or if the car pulls to one side. Computerised alignment shouldn't cross ₹1,800." },
+      { name: "Headlight bulb", aliases: ["headlight bulb", "headlamp bulb", "headlight"], min: 300, max: 900, note: "Per bulb. LED upgrades cost more but a standard halogen swap is cheap." },
+      { name: "Alternator", aliases: ["alternator"], min: 8000, max: 18000, note: "Ask whether it's new or reconditioned — reconditioned at new prices is a common overcharge." },
+      { name: "Starter motor", aliases: ["starter motor", "self starter", "self-start"], min: 6000, max: 14000, note: "Same as alternator: confirm new vs reconditioned." },
+      { name: "Shock absorbers (pair)", aliases: ["shock absorber", "shocker", "strut", "suspension"], min: 4000, max: 10000, note: "Usually replaced in pairs. If only one side is quoted, ask why." },
+      { name: "Fuel filter", aliases: ["fuel filter"], min: 400, max: 1000, note: "Cheap part, often bundled into 'service'. As a separate line it shouldn't cross ₹1,000." },
+      { name: "Throttle / injector cleaning", aliases: ["throttle", "injector cleaning", "fuel injector", "decarbon"], min: 1200, max: 3500, note: "'Engine decarbonising' at high prices is mostly theatre on a healthy engine. Ask what symptoms justified it." },
+      { name: "Labour / service charge", aliases: ["labour", "labor", "service charge", "labour charge", "labour cost"], min: 500, max: 3000, note: "Varies wildly: authorised service centres charge far more than independent garages for the same work." }
+    ]
+  },
+  US: {
+    currency: "$",
+    label: "United States (beta)",
+    items: [
+      { name: "Oil change (full synthetic)", aliases: ["engine oil", "oil change", "synthetic oil", "5w30"], min: 60, max: 120, note: "Quick-lube shops sit at the low end; dealerships at the high end." },
+      { name: "Engine air filter", aliases: ["air filter", "engine air filter"], min: 20, max: 45, note: "Five-minute DIY job — a frequent upsell at the counter." },
+      { name: "Cabin air filter", aliases: ["cabin filter", "cabin air filter", "ac filter", "pollen filter"], min: 25, max: 60, note: "Behind the glove box on most cars. YouTube + $25 part beats a $90 shop charge." },
+      { name: "Brake pads (front axle)", aliases: ["brake pad", "brake pads", "front brake"], min: 150, max: 350, note: "Ask for the old pads back and check pad thickness yourself." },
+      { name: "Brake rotors (pair)", aliases: ["brake disc", "brake rotor", "disc rotor"], min: 200, max: 500, note: "Resurfacing is cheaper than replacing — confirm which was done." },
+      { name: "Battery (12V)", aliases: ["battery", "car battery", "12v battery"], min: 150, max: 300, note: "Most auto-parts stores install it free. Check the date sticker." },
+      { name: "AC recharge", aliases: ["ac gas", "ac recharge", "ac refill", "refrigerant"], min: 150, max: 300, note: "If it leaked once, it'll leak again — insist on a leak check." },
+      { name: "Coolant flush", aliases: ["coolant", "radiator flush"], min: 100, max: 200, note: "Straightforward service. 'Premium coolant' upsells are usually margin." },
+      { name: "Spark plugs (set)", aliases: ["spark plug"], min: 100, max: 300, note: "Iridium plugs cost more but last ~100k miles." },
+      { name: "Alternator", aliases: ["alternator"], min: 400, max: 900, note: "Confirm new vs remanufactured — reman at new prices is a classic overcharge." },
+      { name: "Starter motor", aliases: ["starter motor", "starter"], min: 350, max: 750, note: "Same rule as the alternator: new vs reman matters." },
+      { name: "Wheel alignment", aliases: ["wheel alignment", "alignment"], min: 80, max: 180, note: "4-wheel alignment costs more than front-only — check which was quoted." },
+      { name: "Wiper blades (pair)", aliases: ["wiper", "wiper blade"], min: 25, max: 60, note: "Two-minute DIY. Among the most overpriced line items everywhere." },
+      { name: "Labor", aliases: ["labour", "labor", "shop charge", "labor charge"], min: 90, max: 350, note: "Dealership labor rates ($150+/hr) dwarf independent shops. Same work, different rent." }
+    ]
+  }
+};
+
+const SAMPLES = {
+  IN: "Sharma Auto Works — Estimate\nEngine oil 5W30 synthetic - Rs 3,200\nOil filter - Rs 850\nBrake pads front - Rs 6,800\nBrake disc skimming - Rs 2,500\nAC gas refill - Rs 4,200\nWiper blades - Rs 1,400\nLabour charges - Rs 3,500\nTotal: Rs 22,450",
+  US: "Mike's Auto — Estimate\nFull synthetic oil change - $89\nEngine air filter - $65\nFront brake pads - $420\nCabin air filter - $85\nWiper blades - $45\nTotal: $704"
+};
+
+function norm(s) {
+  return (s || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/* Parse pasted estimate text into [{ raw, label, price }].
+   Takes the LAST number on each line as the price (prices sit at line end).
+   Lines that are just a stated total are captured separately. */
+function parseEstimate(text) {
+  const lines = [], statedTotal = { value: null, raw: "" };
+  for (const rawLine of String(text).split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const matches = [...line.matchAll(/(?:₹|rs\.?|inr|\$|usd)?\s*([\d,]+(?:\.\d{1,2})?)/gi)];
+    if (!matches.length) continue;
+    const m = matches[matches.length - 1];
+    const price = parseFloat(m[1].replace(/,/g, ""));
+    if (!isFinite(price) || price <= 0) continue;
+    let label = line.slice(0, m.index).trim().replace(/[-–—:|•·]+$/, "").trim();
+    if (/^(grand\s+)?total|subtotal|amount (due|payable)/i.test(label)) {
+      statedTotal.value = price; statedTotal.raw = line; continue;
+    }
+    if (!label) label = "(unnamed item)";
+    lines.push({ raw: line, label, price });
+  }
+  return { lines, statedTotal };
+}
+
+/* Match a line label against the price pack. Longest-alias wins. */
+function matchItem(label, pack) {
+  const n = norm(label);
+  if (n.length < 3) return null;
+  let best = null, bestLen = 0;
+  for (const item of pack.items) {
+    for (const a of item.aliases) {
+      const na = norm(a);
+      if (na.length >= 4 && n.includes(na) && na.length > bestLen) { best = item; bestLen = na.length; }
+    }
+  }
+  return best;
+}
+
+/* Flag one matched line. Thresholds are deliberately conservative:
+   only clearly-out-of-range prices get flagged. */
+function flagLine(price, item) {
+  if (price > item.max * 1.2) return "high";
+  if (price > item.max) return "check";
+  if (price < item.min * 0.6) return "low";
+  return "fair";
+}
+
+/* Full deterministic analysis. Returns everything the UI and the
+   AI prompt need — verdict, totals, per-line flags. */
+function analyzeQuote(text, region) {
+  const pack = PRICE_PACKS[region] || PRICE_PACKS.IN;
+  const { lines, statedTotal } = parseEstimate(text);
+  const out = [];
+  let quotedTotal = 0, fairMinTotal = 0, fairMaxTotal = 0, overpay = 0;
+  let high = 0, check = 0, low = 0, unknown = 0;
+
+  for (const l of lines) {
+    quotedTotal += l.price;
+    const item = matchItem(l.label, pack);
+    if (!item) { unknown++; out.push({ ...l, verdict: "unknown", item: null }); continue; }
+    const v = flagLine(l.price, item);
+    if (v === "high") { high++; overpay += l.price - item.max; }
+    else if (v === "check") { check++; overpay += l.price - item.max; }
+    else if (v === "low") low++;
+    fairMinTotal += item.min; fairMaxTotal += item.max;
+    out.push({ ...l, verdict: v, item });
+  }
+
+  let verdict = "fair", verdictHead = "Looks like a fair deal", verdictBody = "";
+  const flags = high + check + low + unknown;
+  if (overpay > quotedTotal * 0.12 || high >= 2) {
+    verdict = "overpriced";
+    verdictHead = "This quote looks overpriced";
+    verdictBody = "Multiple lines sit well above fair range. Worth questioning before you approve — or get a second quote.";
+  } else if (flags > 0) {
+    verdict = "mixed";
+    verdictHead = "Mostly fine — a few lines need questions";
+    verdictBody = "The total isn't crazy, but some items deserve a second look. The flagged lines below tell you exactly what to ask.";
+  } else {
+    verdictBody = "Every matched line sits inside fair range for this region. Still worth a skim of the notes below.";
+  }
+
+  return {
+    region, currency: pack.currency, regionLabel: pack.label,
+    lines: out, verdict, verdictHead, verdictBody,
+    quotedTotal, fairMinTotal, fairMaxTotal,
+    overpay: Math.round(overpay),
+    counts: { high, check, low, unknown, total: out.length },
+    statedTotal,
+    totalMismatch: statedTotal.value != null ? Math.round(statedTotal.value - quotedTotal) : null
+  };
+}
+
+/* Compact, model-friendly summary. The AI gets numbers, never computes them. */
+function buildAIPromptData(a) {
+  const c = a.currency;
+  const itemLines = a.lines.map(l => {
+    if (!l.item) return `- "${l.label}": quoted ${c}${fmtNum(l.price)} — UNKNOWN (not in price database)`;
+    const tag = { high: "HIGH", check: "ABOVE RANGE", low: "BELOW RANGE", fair: "FAIR" }[l.verdict];
+    return `- ${l.item.name}: quoted ${c}${fmtNum(l.price)} — ${tag} (fair ${c}${fmtNum(l.item.min)}–${c}${fmtNum(l.item.max)})`;
+  }).join("\n");
+  return `Region: ${a.regionLabel} (${c})
+Quoted total: ${c}${fmtNum(a.quotedTotal)}
+Fair range for matched items: ${c}${fmtNum(a.fairMinTotal)}–${c}${fmtNum(a.fairMaxTotal)}
+Potential overpay vs fair range: ~${c}${fmtNum(a.overpay)}
+Items:\n${itemLines}`;
+}
+
+function fmtNum(n) {
+  return Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+}
+</script>
+
+<script type="module">
+/* ---------- UI wiring (DOM) ---------- */
+let region = "IN";
+let lastAnalysis = null;
+let engine = null, engineLoading = false;
+
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/^-\s/gm,"&bull; ");
+
+document.querySelectorAll("#regionSeg button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#regionSeg button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    region = b.dataset.region;
+    $("results").style.display = "none";
+    lastAnalysis = null;
+  });
+});
+
+$("sampleBtn").addEventListener("click", () => {
+  $("estimateInput").value = SAMPLES[region];
+  $("estimateInput").focus();
+});
+
+$("analyzeBtn").addEventListener("click", () => {
+  const text = $("estimateInput").value.trim();
+  if (!text) { $("estimateInput").focus(); return; }
+  lastAnalysis = analyzeQuote(text, region);
+  renderResults(lastAnalysis);
+  $("results").style.display = "block";
+  $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+  // reset AI panel for the new analysis
+  $("aiOut").textContent = "";
+  $("aiBtnRow").style.display = "flex";
+  $("aiProgWrap").style.display = "none";
+  $("aiSub").textContent = "One click loads Google's open-weight Gemma 2B into your browser (~1.5 GB, one-time, cached after). Nothing you pasted is ever sent anywhere.";
+});
+
+function pillFor(v) {
+  return { high: ["HIGH","high"], check: ["ABOVE RANGE","check"], low: ["BELOW RANGE","low"], fair: ["FAIR","fair"], unknown: ["UNKNOWN","unknown"] }[v];
+}
+
+function renderResults(a) {
+  const c = a.currency;
+  const banner = $("verdictBanner");
+  banner.className = "verdict " + a.verdict;
+  const mark = { overpriced: "OVERPRICED", mixed: "WORTH QUESTIONING", fair: "FAIR DEAL" }[a.verdict];
+  banner.innerHTML = `<div class="mark">${mark}</div><div><h3>${esc(a.verdictHead)}</h3><p>${esc(a.verdictBody)}</p></div>`;
+
+  const overpayV = a.overpay > 0
+    ? `<div class="v red">${c}${fmtNum(a.overpay)}</div>`
+    : `<div class="v green">&mdash;</div>`;
+  $("totalsRow").innerHTML = `
+    <div class="total"><div class="k">Quoted total</div><div class="v">${c}${fmtNum(a.quotedTotal)}</div></div>
+    <div class="total"><div class="k">Fair range (matched)</div><div class="v">${c}${fmtNum(a.fairMinTotal)}&ndash;${fmtNum(a.fairMaxTotal)}</div></div>
+    <div class="total"><div class="k">Potential overpay</div>${overpayV}</div>`;
+
+  let mismatchHtml = "";
+  if (a.totalMismatch !== null) {
+    mismatchHtml = a.totalMismatch === 0
+      ? `<div class="chip" style="margin:4px 0 0"><b>Bill total matches</b>&nbsp;line items &mdash; no hidden padding in the total.</div>`
+      : `<div class="chip" style="margin:4px 0 0;border-color:rgba(245,165,36,.4);color:var(--amber)"><b>Heads up:</b>&nbsp;bill states ${c}${fmtNum(a.statedTotal.value)} but lines sum to ${c}${fmtNum(a.quotedTotal)} (diff ${c}${fmtNum(Math.abs(a.totalMismatch))}) &mdash; ask what the gap is.</div>`;
+  }
+
+  const itemsHtml = a.lines.length ? a.lines.map(l => {
+    const [pillText, pillCls] = pillFor(l.verdict);
+    const fairLine = l.item ? `<div class="fair">Fair range: ${c}${fmtNum(l.item.min)} &ndash; ${c}${fmtNum(l.item.max)}</div>` : "";
+    const note = l.item
+      ? `<div class="note">${esc(l.item.note)}</div>`
+      : `<div class="note">Not in our price database. Ask the garage exactly what this part or service is &mdash; and get the part number.</div>`;
+    return `<div class="item">
+      <div class="top"><span class="name">${esc(l.label)}</span><span class="pill ${pillCls}">${pillText}</span></div>
+      <div class="price">${c}${fmtNum(l.price)}</div>
+      ${fairLine}${note}
+    </div>`;
+  }).join("") : `<div class="item"><div class="name">No priced items found</div><div class="note">Paste one item per line with its price, e.g. "Brake pads front - Rs 6,800".</div></div>`;
+
+  $("itemsList").innerHTML = mismatchHtml + itemsHtml;
+}
+
+/* ---------- On-device AI: Gemma 2B via WebLLM ---------- */
+$("loadModelBtn").addEventListener("click", async () => {
+  if (!lastAnalysis) return;
+  if (engineLoading) return;
+  const btn = $("loadModelBtn");
+  if (engine) { explainWithAI(); return; }
+  engineLoading = true;
+  btn.disabled = true; btn.textContent = "Loading Gemma 2B…";
+  $("aiProgWrap").style.display = "block";
+  $("aiSub").textContent = "Downloading open-weight Gemma 2B (~1.5 GB) — one time only, then cached in your browser. Your estimate never leaves this page.";
+  try {
+    const { CreateMLCEngine } = await import("https://esm.run/@mlc-ai/web-llm");
+    engine = await CreateMLCEngine("gemma-2-2b-it-q4f16_1-MLC", {
+      initProgressCallback: p => { $("aiProg").style.width = Math.round(p.progress * 100) + "%"; }
+    });
+    $("aiProgWrap").style.display = "none";
+    $("aiBtnRow").style.display = "none";
+    explainWithAI();
+  } catch (e) {
+    engineLoading = false;
+    btn.disabled = false; btn.textContent = "Retry loading AI";
+    $("aiProgWrap").style.display = "none";
+    $("aiSub").textContent = "On-device AI needs a browser with WebGPU (Chrome or Edge on a reasonably modern machine). The line-by-line analysis above is complete without it — nothing was sent anywhere.";
+  }
+});
+
+async function explainWithAI() {
+  const a = lastAnalysis;
+  $("aiSub").textContent = "Gemma 2B is reading your numbers — locally. Streaming…";
+  $("aiOut").textContent = "";
+  const system = "You are WrenchWise, a blunt, honest mechanic's assistant. Explain car repairs in plain English a non-car person understands. Use ONLY the numbers given below — never invent prices or parts. Keep the whole answer under 220 words.";
+  const user = `Here is a deterministic analysis of a car repair estimate (all numbers computed by code, trust them completely):\n\n${buildAIPromptData(a)}\n\nDo three things:\n1. For each HIGH, ABOVE RANGE, BELOW RANGE or UNKNOWN item: ONE plain-English line — what the part does, and whether the flag looks justified.\n2. VERDICT: two sentences on the overall quote using the totals.\n3. ASK YOUR MECHANIC: exactly 3 sharp, specific questions the customer should ask, referencing the flagged items by name.`;
+  try {
+    const stream = await engine.chat.completions.create({
+      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      temperature: 0.3, max_tokens: 700, stream: true
+    });
+    let raw = "";
+    for await (const chunk of stream) {
+      const d = chunk.choices[0]?.delta?.content || "";
+      raw += d;
+      $("aiOut").innerHTML = md(raw);
+    }
+    $("aiSub").textContent = "Explained by Gemma 2B running 100% in your browser. The numbers came from code; the words came from the model.";
+  } catch (e) {
+    $("aiOut").textContent = "The model hit a snag explaining this one. The line-by-line data above is unaffected — try reloading the model.";
+  }
+}
+</script>
+</body>
+</html>
