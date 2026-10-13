@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: wrenchwise
+    env: static
+    buildCommand: echo "static site - no build needed"
+    staticPublishPath: .
